@@ -14,7 +14,7 @@ builder.Services.AddScoped<IPaymentService, SimulatedPaymentService>();
 builder.Services.AddMessagingConsumers(builder.Configuration, consumers =>
 {
     consumers.AddConsumer<OrderPlacedEventConsumer>();
-});
+}, "payments");
 
 var app = builder.Build();
 
