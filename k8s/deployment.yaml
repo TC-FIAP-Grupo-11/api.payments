@@ -1,0 +1,69 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: payments-api
+  namespace: default
+  labels:
+    app: payments-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: payments-api
+  template:
+    metadata:
+      labels:
+        app: payments-api
+    spec:
+      containers:
+      - name: payments-api
+        image: fcg-payments-api:latest
+        imagePullPolicy: Never
+        ports:
+        - containerPort: 80
+          name: http
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: payments-api-config
+              key: ASPNETCORE_ENVIRONMENT
+        - name: ASPNETCORE_URLS
+          valueFrom:
+            configMapKeyRef:
+              name: payments-api-config
+              key: ASPNETCORE_URLS
+        - name: Messaging__RabbitMQ__Host
+          valueFrom:
+            configMapKeyRef:
+              name: payments-api-config
+              key: RABBITMQ_HOST
+        - name: Messaging__RabbitMQ__Username
+          valueFrom:
+            configMapKeyRef:
+              name: payments-api-config
+              key: RABBITMQ_USERNAME
+        - name: Messaging__RabbitMQ__Password
+          valueFrom:
+            configMapKeyRef:
+              name: payments-api-config
+              key: RABBITMQ_PASSWORD
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 15
+          periodSeconds: 15

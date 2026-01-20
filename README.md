@@ -1,38 +1,36 @@
 # FCG.Api.Payments
 
+**Tech Challenge - Fase 2**  
 API simples para simulação de processamento de pagamentos.
+
+> **⚠️ Este microsserviço faz parte de um sistema maior.**  
+> Para executar toda a plataforma (Docker Compose ou Kubernetes), veja: [FCG.Infra.Orchestration](../FCG.Infra.Orchestration/README.md)
 
 ## Propósito
 
 Esta API simula o processamento de pagamentos com cartão de crédito. Os pagamentos **NÃO são processados de verdade**. Apenas simulados e logados no console.
 
-## Como executar
+## Variáveis de Ambiente
 
+```bash
+# RabbitMQ
+Messaging__RabbitMQ__Host="localhost"
+Messaging__RabbitMQ__Username="guest"
+Messaging__RabbitMQ__Password="guest"
+```
+
+## Como Executar
+
+### Localmente
 ```bash
 cd src/FCG.Api.Payments
 dotnet run
 ```
 
-Acesse: http://localhost:5001/swagger
+Acesse: http://localhost:5003/health
 
-## Endpoints
-
-**POST /api/payments/process**
-
-```json
-{
-  "orderId": "3fa85f64-5717-4562-b3fc-2c963f66afa6",
-  "amount": 99.90,
-  "paymentMethod": "CreditCard",
-  "cardNumber": "4111111111111111",
-  "cardHolderName": "John Doe",
-  "expiryDate": "12/25",
-  "cvv": "123"
-}
+### Docker
+```bash
+docker build -t fcg-payments .
+docker run -p 5003:80 fcg-payments
 ```
-
-**Simulação de falha**: Use cartão começando com `0000` para simular pagamento recusado.
-
-**GET /api/payments/{paymentId}**
-
-Consulta status de um pagamento (sempre retorna APPROVED nesta versão simulada).

@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: payments-api-config
+  namespace: default
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  ASPNETCORE_URLS: "http://+:80"
+  RABBITMQ_HOST: "rabbitmq-service"
+  RABBITMQ_USERNAME: "guest"
+  RABBITMQ_PASSWORD: "guest"
