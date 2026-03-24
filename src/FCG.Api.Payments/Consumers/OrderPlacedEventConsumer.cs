@@ -1,4 +1,7 @@
-using FCG.Api.Payments.Services;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Amazon.Lambda;
+using Amazon.Lambda.Model;
 using FCG.Lib.Shared.Messaging.Contracts;
 using MassTransit;
 
@@ -6,17 +9,26 @@ namespace FCG.Api.Payments.Consumers;
 
 public class OrderPlacedEventConsumer : IConsumer<OrderPlacedEvent>
 {
-    private readonly IPaymentService _paymentService;
-    private readonly ILambdaNotificationService _lambdaNotificationService;
+    private readonly IAmazonLambda _lambdaClient;
+    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly string _functionName;
     private readonly ILogger<OrderPlacedEventConsumer> _logger;
 
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     public OrderPlacedEventConsumer(
-        IPaymentService paymentService,
-        ILambdaNotificationService lambdaNotificationService,
+        IAmazonLambda lambdaClient,
+        IPublishEndpoint publishEndpoint,
+        IConfiguration configuration,
         ILogger<OrderPlacedEventConsumer> logger)
     {
-        _paymentService = paymentService;
-        _lambdaNotificationService = lambdaNotificationService;
+        _lambdaClient = lambdaClient;
+        _publishEndpoint = publishEndpoint;
+        _functionName = configuration["AWS:PaymentLambdaName"] ?? "fcg-payment-processor";
         _logger = logger;
     }
 
@@ -24,26 +36,28 @@ public class OrderPlacedEventConsumer : IConsumer<OrderPlacedEvent>
     {
         var order = context.Message;
 
-        _logger.LogInformation("Processing payment for order {OrderId}", order.OrderId);
+        _logger.LogInformation("Invoking payment Lambda for order {OrderId}", order.OrderId);
 
-        var (success, message) = await _paymentService.ProcessPaymentAsync(
-            order.OrderId,
-            order.Price,
-            "card",
-            "4111111111111111");
-
-        var paymentEvent = new PaymentProcessedEvent
+        var invokeRequest = new InvokeRequest
         {
-            OrderId = order.OrderId,
-            UserId = order.UserId,
-            GameId = order.GameId,
-            GameTitle = order.GameTitle,
-            UserEmail = order.UserEmail,
-            Status = success ? PaymentStatus.Approved : PaymentStatus.Rejected,
-            Message = message,
-            ProcessedAt = DateTime.UtcNow
+            FunctionName = _functionName,
+            InvocationType = InvocationType.RequestResponse,
+            Payload = JsonSerializer.Serialize(order, JsonOptions)
         };
 
-        await _lambdaNotificationService.InvokeAsync("PaymentProcessed", paymentEvent, context.CancellationToken);
+        var response = await _lambdaClient.InvokeAsync(invokeRequest, context.CancellationToken);
+
+        var paymentEvent = await JsonSerializer.DeserializeAsync<PaymentProcessedEvent>(
+            response.Payload, JsonOptions, context.CancellationToken);
+
+        if (paymentEvent is null)
+        {
+            _logger.LogError("Null response from Lambda for order {OrderId}", order.OrderId);
+            return;
+        }
+
+        _logger.LogInformation("Payment {Status} for order {OrderId}", paymentEvent.Status, paymentEvent.OrderId);
+
+        await _publishEndpoint.Publish(paymentEvent, context.CancellationToken);
     }
 }

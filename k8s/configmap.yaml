@@ -6,8 +6,8 @@ metadata:
 data:
   ASPNETCORE_ENVIRONMENT: "Production"
   ASPNETCORE_URLS: "http://+:80"
-  RABBITMQ_HOST: "rabbitmq-service"
-  RABBITMQ_USERNAME: "guest"
-  RABBITMQ_PASSWORD: "guest"
+  RabbitMQ__Host: "rabbitmq-service"
+  RabbitMQ__Username: "guest"
+  RabbitMQ__Password: "guest"
   SWAGGER_BASE_PATH: "/payments"
   NEW_RELIC_APP_NAME: "fcg-payments-api"

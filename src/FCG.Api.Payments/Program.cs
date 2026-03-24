@@ -1,9 +1,7 @@
 using Amazon;
 using Amazon.Lambda;
-using Amazon.XRay.Recorder.Handlers.AspNetCore;
 using Amazon.Runtime;
 using FCG.Api.Payments.Consumers;
-using FCG.Api.Payments.Services;
 using MassTransit;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -16,9 +14,6 @@ builder.Services.AddSwaggerGen(c =>
     if (!string.IsNullOrEmpty(basePath))
         c.AddServer(new Microsoft.OpenApi.Models.OpenApiServer { Url = basePath });
 });
-
-// Payment service
-builder.Services.AddScoped<IPaymentService, SimulatedPaymentService>();
 
 // AWS Lambda client
 builder.Services.AddSingleton<IAmazonLambda>(sp =>
@@ -39,8 +34,6 @@ builder.Services.AddSingleton<IAmazonLambda>(sp =>
 
     return new AmazonLambdaClient(credentials, RegionEndpoint.GetBySystemName(region));
 });
-
-builder.Services.AddScoped<ILambdaNotificationService, LambdaNotificationService>();
 
 // MassTransit + RabbitMQ
 builder.Services.AddMassTransit(x =>
@@ -64,8 +57,6 @@ builder.Services.AddMassTransit(x =>
 });
 
 var app = builder.Build();
-
-app.UseXRay("fcg-payments-api");
 
 app.UseSwagger();
 app.UseSwaggerUI(c =>
