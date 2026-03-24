@@ -7,46 +7,43 @@ namespace FCG.Api.Payments.Consumers;
 public class OrderPlacedEventConsumer : IConsumer<OrderPlacedEvent>
 {
     private readonly IPaymentService _paymentService;
-    private readonly IPublishEndpoint _publishEndpoint;
+    private readonly ILambdaNotificationService _lambdaNotificationService;
     private readonly ILogger<OrderPlacedEventConsumer> _logger;
 
     public OrderPlacedEventConsumer(
         IPaymentService paymentService,
-        IPublishEndpoint publishEndpoint,
+        ILambdaNotificationService lambdaNotificationService,
         ILogger<OrderPlacedEventConsumer> logger)
     {
         _paymentService = paymentService;
-        _publishEndpoint = publishEndpoint;
+        _lambdaNotificationService = lambdaNotificationService;
         _logger = logger;
     }
 
     public async Task Consume(ConsumeContext<OrderPlacedEvent> context)
     {
-        var evt = context.Message;
-        
-        _logger.LogInformation(
-            "Recebido evento OrderPlacedEvent para pedido {OrderId} - Valor: {Price:C}",
-            evt.OrderId,
-            evt.Price);
+        var order = context.Message;
 
-        // Simular processamento de pagamento (usar cartão fictício)
+        _logger.LogInformation("Processing payment for order {OrderId}", order.OrderId);
+
         var (success, message) = await _paymentService.ProcessPaymentAsync(
-            evt.OrderId,
-            evt.Price,
-            "CreditCard",
-            "4111111111111111"); // Cartão de teste que sempre aprova
+            order.OrderId,
+            order.Price,
+            "card",
+            "4111111111111111");
 
-        // Publicar resultado do pagamento
-        await _publishEndpoint.Publish(new PaymentProcessedEvent
+        var paymentEvent = new PaymentProcessedEvent
         {
-            OrderId = evt.OrderId,
-            UserId = evt.UserId,
-            GameId = evt.GameId,
-            GameTitle = evt.GameTitle,
-            UserEmail = evt.UserEmail,
+            OrderId = order.OrderId,
+            UserId = order.UserId,
+            GameId = order.GameId,
+            GameTitle = order.GameTitle,
+            UserEmail = order.UserEmail,
             Status = success ? PaymentStatus.Approved : PaymentStatus.Rejected,
             Message = message,
             ProcessedAt = DateTime.UtcNow
-        });
+        };
+
+        await _lambdaNotificationService.InvokeAsync("PaymentProcessed", paymentEvent, context.CancellationToken);
     }
 }
