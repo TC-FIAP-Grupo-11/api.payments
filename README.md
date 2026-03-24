@@ -7,7 +7,7 @@ API de processamento de pagamentos — event-driven via RabbitMQ, com invocaçã
 > Para executar toda a plataforma (Docker Compose ou Kubernetes), veja: [FCG.Infra.Orchestration](../FCG.Infra.Orchestration/README.md)
 
 ## Propósito
-
+ 
 Esta API simula o processamento de pagamentos com cartão de crédito. Os pagamentos **NÃO são processados de verdade**. Apenas simulados e logados no console.
 
 ## Variáveis de Ambiente
