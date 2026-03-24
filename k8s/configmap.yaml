@@ -10,3 +10,4 @@ data:
   RABBITMQ_USERNAME: "guest"
   RABBITMQ_PASSWORD: "guest"
   SWAGGER_BASE_PATH: "/payments"
+  NEW_RELIC_APP_NAME: "fcg-payments-api"
