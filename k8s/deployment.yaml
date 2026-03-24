@@ -33,17 +33,17 @@ spec:
             configMapKeyRef:
               name: payments-api-config
               key: ASPNETCORE_URLS
-        - name: Messaging__RabbitMQ__Host
+        - name: RabbitMQ__Host
           valueFrom:
             configMapKeyRef:
               name: payments-api-config
               key: RABBITMQ_HOST
-        - name: Messaging__RabbitMQ__Username
+        - name: RabbitMQ__Username
           valueFrom:
             configMapKeyRef:
               name: payments-api-config
               key: RABBITMQ_USERNAME
-        - name: Messaging__RabbitMQ__Password
+        - name: RabbitMQ__Password
           valueFrom:
             configMapKeyRef:
               name: payments-api-config
